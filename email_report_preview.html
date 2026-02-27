@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Intelligence Report — Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e1a;
+    color: #e0e8ff;
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 24px;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #0d1b3e 0%, #1a2a5e 50%, #0d1b3e 100%);
+    border: 1px solid #2a3a7e;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #00d4ff, #7c3aed, #10b981, #00d4ff);
+    background-size: 200%;
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand { font-family: 'IBM Plex Mono', monospace; }
+  .brand-title { font-size: 22px; font-weight: 600; color: #00d4ff; letter-spacing: 2px; }
+  .brand-sub { font-size: 12px; color: #6b7aaa; margin-top: 4px; }
+  .timestamp { text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4a5a8a; }
+
+  .stats-row { display: flex; gap: 12px; margin-top: 20px; }
+  .stat-box {
+    background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.18);
+    border-radius: 8px; padding: 12px 16px; flex: 1;
+  }
+  .stat-val { font-size: 24px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .stat-lbl { font-size: 10px; color: #4a5a8a; margin-top: 3px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .section-title {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 2px; color: #7c3aed; margin: 28px 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: rgba(124,58,237,0.25); }
+
+  .picks-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+  .pick-card {
+    background: linear-gradient(135deg, #0d1b3e, #141f3e);
+    border: 1px solid #1e2d5e; border-radius: 10px; padding: 14px;
+    transition: transform 0.2s; cursor: default;
+  }
+  .pick-card:hover { transform: translateY(-2px); }
+  .pick-card.top { border-color: rgba(0,212,255,0.5); background: linear-gradient(135deg, #091a35, #0d2040); box-shadow: 0 0 20px rgba(0,212,255,0.08); }
+  .pick-ticker { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: #00d4ff; }
+  .pick-name { font-size: 10px; color: #4a5a8a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick-score { font-size: 26px; font-weight: 700; margin-top: 10px; color: #e0e8ff; font-family: 'IBM Plex Mono', monospace; }
+  .pick-label { font-size: 10px; color: #4a5a8a; text-transform: uppercase; letter-spacing: 1px; }
+  .pick-price { font-size: 12px; color: #6b7aaa; margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 28px; font-size: 13px; }
+  thead th {
+    background: #0a0f1f; color: #4a5a8a;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    padding: 10px 12px; text-align: left; border-bottom: 1px solid #1e2d5e;
+    font-family: 'IBM Plex Mono', monospace; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #0f1625; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody td { padding: 11px 12px; vertical-align: middle; }
+
+  .ticker-name .t { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: #e0e8ff; font-size: 13px; }
+  .ticker-name .n { font-size: 11px; color: #4a5a8a; margin-top: 2px; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    font-family: 'IBM Plex Mono', monospace; white-space: nowrap;
+  }
+  .buy { background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+  .sell { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .hold { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+
+  .score-wrap { display: flex; align-items: center; gap: 7px; }
+  .score-bar-bg { flex: 1; height: 5px; background: #1e2d5e; border-radius: 3px; overflow: hidden; }
+  .bar { height: 100%; border-radius: 3px; }
+  .bar-buy { background: linear-gradient(90deg, #059669, #10b981); }
+  .bar-hold { background: linear-gradient(90deg, #d97706, #f59e0b); }
+  .bar-sell { background: linear-gradient(90deg, #dc2626, #ef4444); }
+  .score-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7aaa; width: 28px; text-align: right; }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .dim { color: #6b7aaa; }
+  .pos { color: #10b981; }
+  .neg { color: #ef4444; }
+
+  .trigger-tag {
+    display: inline-block; background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.15); border-radius: 4px;
+    padding: 1px 5px; font-size: 10px; color: #00a8cc; margin: 1px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .alert-row { background: rgba(245,158,11,0.04); }
+  .alert-badge { display: inline-block; background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+
+  .disclaimer {
+    background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.12);
+    border-radius: 8px; padding: 12px 16px; margin: 20px 0;
+    font-size: 11px; color: #5a2020; line-height: 1.6;
+  }
+  .footer { border-top: 1px solid #1e2d5e; padding-top: 16px; color: #2a3a6e; font-size: 11px; text-align: center; line-height: 1.9; }
+
+  .indicator-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 24px;
+  }
+  .ind-card {
+    background: #0d1322; border: 1px solid #1a2440; border-radius: 8px; padding: 10px 12px;
+  }
+  .ind-name { font-size: 10px; color: #4a5a8a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .ind-val { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #e0e8ff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-top">
+    <div class="brand">
+      <div class="brand-title">⚡ STOCK INTELLIGENCE</div>
+      <div class="brand-sub">Technical + Fundamental Analysis Engine  •  20 Indicators  •  3 Timeframes</div>
+    </div>
+    <div class="timestamp">
+      <div style="color:#6b7aaa;">2025-02-25 14:00:00</div>
+      <div style="margin-top:4px;color:#2a3a6e;">Next scan in ~1 hour</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-val" style="color:#00d4ff;">48</div>
+      <div class="stat-lbl">Stocks Scanned</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#10b981;">19</div>
+      <div class="stat-lbl">Buy Signals</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#f59e0b;">22</div>
+      <div class="stat-lbl">Hold Signals</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#ef4444;">7</div>
+      <div class="stat-lbl">Sell Signals</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#7c3aed;">20</div>
+      <div class="stat-lbl">Indicators</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Top 5 Picks ── -->
+<div class="section-title">🏆 Top 5 Picks of the Hour</div>
+<div class="picks-grid">
+  <div class="pick-card top">
+    <div class="pick-ticker">NVDA</div>
+    <div class="pick-name">NVIDIA Corporation</div>
+    <div class="pick-price">$875.40 · <span class="pos">+3.2%</span></div>
+    <div class="pick-score">84.7</div>
+    <div class="pick-label">Daily Score</div>
+    <div style="margin-top:8px"><span class="badge buy">BUY</span></div>
+  </div>
+  <div class="pick-card">
+    <div class="pick-ticker">AVGO</div>
+    <div class="pick-name">Broadcom Inc</div>
+    <div class="pick-price">$1,421.20 · <span class="pos">+1.8%</span></div>
+    <div class="pick-score">79.2</div>
+    <div class="pick-label">Daily Score</div>
+    <div style="margin-top:8px"><span class="badge buy">BUY</span></div>
+  </div>
+  <div class="pick-card">
+    <div class="pick-ticker">MSFT</div>
+    <div class="pick-name">Microsoft Corp</div>
+    <div class="pick-price">$415.30 · <span class="pos">+1.1%</span></div>
+    <div class="pick-score">76.5</div>
+    <div class="pick-label">Daily Score</div>
+    <div style="margin-top:8px"><span class="badge buy">BUY</span></div>
+  </div>
+  <div class="pick-card">
+    <div class="pick-ticker">META</div>
+    <div class="pick-name">Meta Platforms Inc</div>
+    <div class="pick-price">$524.80 · <span class="pos">+0.9%</span></div>
+    <div class="pick-score">74.1</div>
+    <div class="pick-label">Daily Score</div>
+    <div style="margin-top:8px"><span class="badge buy">BUY</span></div>
+  </div>
+  <div class="pick-card">
+    <div class="pick-ticker">CRWD</div>
+    <div class="pick-name">CrowdStrike Holdings</div>
+    <div class="pick-price">$318.60 · <span class="pos">+2.4%</span></div>
+    <div class="pick-score">71.8</div>
+    <div class="pick-label">Daily Score</div>
+    <div style="margin-top:8px"><span class="badge buy">BUY</span></div>
+  </div>
+</div>
+
+<!-- ── Short-Term Table ── -->
+<div class="section-title">⚡ Short-Term Opportunities (Daily / Weekly)</div>
+<table>
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th>Price</th>
+      <th>Chg%</th>
+      <th>Daily Signal</th>
+      <th>Weekly Signal</th>
+      <th>Tech Score</th>
+      <th>Fund Score</th>
+      <th>RSI</th>
+      <th>ADX</th>
+      <th>ATR%</th>
+      <th>Buy Triggers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><div class="ticker-name"><div class="t">NVDA</div><div class="n">NVIDIA Corp</div></div></td>
+      <td class="mono">$875.40</td>
+      <td class="mono pos">+3.2%</td>
+      <td><span class="badge buy">BUY 84.7</span></td>
+      <td><span class="badge buy">BUY 78.3</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:88%"></div></div><div class="score-num">88</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:76%"></div></div><div class="score-num">76</div></div></td>
+      <td class="mono">58.4</td>
+      <td class="mono">31.2</td>
+      <td class="mono dim">3.8%</td>
+      <td><span class="trigger-tag">MACD</span><span class="trigger-tag">EMA</span><span class="trigger-tag">ADX</span><span class="trigger-tag">OBV</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">AVGO</div><div class="n">Broadcom Inc</div></div></td>
+      <td class="mono">$1,421.20</td>
+      <td class="mono pos">+1.8%</td>
+      <td><span class="badge buy">BUY 79.2</span></td>
+      <td><span class="badge buy">BUY 74.5</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:82%"></div></div><div class="score-num">82</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" if style="width:72%"></div></div><div class="score-num">72</div></div></td>
+      <td class="mono">54.1</td>
+      <td class="mono">28.7</td>
+      <td class="mono dim">2.4%</td>
+      <td><span class="trigger-tag">MACD</span><span class="trigger-tag">BB</span><span class="trigger-tag">Ichimoku</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">MSFT</div><div class="n">Microsoft Corp</div></div></td>
+      <td class="mono">$415.30</td>
+      <td class="mono pos">+1.1%</td>
+      <td><span class="badge buy">BUY 76.5</span></td>
+      <td><span class="badge buy">BUY 71.2</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:78%"></div></div><div class="score-num">78</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:74%"></div></div><div class="score-num">74</div></div></td>
+      <td class="mono">51.2</td>
+      <td class="mono">26.4</td>
+      <td class="mono dim">1.9%</td>
+      <td><span class="trigger-tag">EMA</span><span class="trigger-tag">VWAP</span><span class="trigger-tag">OBV</span><span class="trigger-tag">F:ROE</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">META</div><div class="n">Meta Platforms</div></div></td>
+      <td class="mono">$524.80</td>
+      <td class="mono pos">+0.9%</td>
+      <td><span class="badge buy">BUY 74.1</span></td>
+      <td><span class="badge buy">BUY 68.7</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:76%"></div></div><div class="score-num">76</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:70%"></div></div><div class="score-num">70</div></div></td>
+      <td class="mono">48.9</td>
+      <td class="mono">24.1</td>
+      <td class="mono dim">2.1%</td>
+      <td><span class="trigger-tag">RSI</span><span class="trigger-tag">MACD</span><span class="trigger-tag">ADX</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">GOOGL</div><div class="n">Alphabet Inc</div></div></td>
+      <td class="mono">$172.40</td>
+      <td class="mono pos">+0.6%</td>
+      <td><span class="badge buy">BUY 68.3</span></td>
+      <td><span class="badge hold">HOLD 62.1</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:70%"></div></div><div class="score-num">70</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:65%"></div></div><div class="score-num">65</div></div></td>
+      <td class="mono">45.2</td>
+      <td class="mono">22.8</td>
+      <td class="mono dim">1.7%</td>
+      <td><span class="trigger-tag">EMA</span><span class="trigger-tag">F:PE</span><span class="trigger-tag">F:FCF</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">JPM</div><div class="n">JPMorgan Chase</div></div></td>
+      <td class="mono">$224.15</td>
+      <td class="mono pos">+0.4%</td>
+      <td><span class="badge hold">HOLD 58.7</span></td>
+      <td><span class="badge hold">HOLD 61.4</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-hold" style="width:56%"></div></div><div class="score-num">56</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:68%"></div></div><div class="score-num">68</div></div></td>
+      <td class="mono">52.1</td>
+      <td class="mono">19.4</td>
+      <td class="mono dim">1.4%</td>
+      <td><span class="trigger-tag">F:PE</span><span class="trigger-tag">F:ROE</span></td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">INTC</div><div class="n">Intel Corp</div></div></td>
+      <td class="mono">$21.80</td>
+      <td class="mono neg">-2.1%</td>
+      <td><span class="badge sell">SELL 31.4</span></td>
+      <td><span class="badge sell">SELL 33.2</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-sell" style="width:28%"></div></div><div class="score-num">28</div></div></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-sell" style="width:38%"></div></div><div class="score-num">38</div></div></td>
+      <td class="mono">38.2</td>
+      <td class="mono">32.1</td>
+      <td class="mono dim">4.2%</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── Long-Term Table ── -->
+<div class="section-title">📈 Long-Term Opportunities (Monthly — Fundamental-Weighted)</div>
+<table>
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th>Price</th>
+      <th>Monthly Signal</th>
+      <th>Fund Score</th>
+      <th>P/E</th>
+      <th>ROE%</th>
+      <th>Rev Growth%</th>
+      <th>Net Margin%</th>
+      <th>Analyst Upside%</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><div class="ticker-name"><div class="t">MSFT</div><div class="n">Microsoft Corp</div></div></td>
+      <td class="mono">$415.30</td>
+      <td><span class="badge buy">BUY 78.4</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:82%"></div></div><div class="score-num">82</div></div></td>
+      <td class="mono">34.2</td>
+      <td class="mono pos">38.5</td>
+      <td class="mono pos">17.3%</td>
+      <td class="mono pos">36.4%</td>
+      <td class="mono pos">+18.2%</td>
+      <td class="dim" style="font-size:12px">Technology</td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">AAPL</div><div class="n">Apple Inc</div></div></td>
+      <td class="mono">$189.50</td>
+      <td><span class="badge buy">BUY 73.1</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:76%"></div></div><div class="score-num">76</div></div></td>
+      <td class="mono">29.8</td>
+      <td class="mono pos">147.2</td>
+      <td class="mono pos">8.1%</td>
+      <td class="mono pos">26.3%</td>
+      <td class="mono pos">+14.6%</td>
+      <td class="dim" style="font-size:12px">Technology</td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">LLY</div><div class="n">Eli Lilly &amp; Co</div></div></td>
+      <td class="mono">$812.40</td>
+      <td><span class="badge buy">BUY 71.8</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:74%"></div></div><div class="score-num">74</div></div></td>
+      <td class="mono">52.1</td>
+      <td class="mono pos">62.4</td>
+      <td class="mono pos">32.8%</td>
+      <td class="mono pos">21.4%</td>
+      <td class="mono pos">+22.1%</td>
+      <td class="dim" style="font-size:12px">Healthcare</td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">V</div><div class="n">Visa Inc</div></div></td>
+      <td class="mono">$281.30</td>
+      <td><span class="badge buy">BUY 70.2</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:72%"></div></div><div class="score-num">72</div></div></td>
+      <td class="mono">26.4</td>
+      <td class="mono pos">44.8</td>
+      <td class="mono pos">11.2%</td>
+      <td class="mono pos">52.1%</td>
+      <td class="mono pos">+16.4%</td>
+      <td class="dim" style="font-size:12px">Financials</td>
+    </tr>
+    <tr>
+      <td><div class="ticker-name"><div class="t">COST</div><div class="n">Costco Wholesale</div></div></td>
+      <td class="mono">$894.20</td>
+      <td><span class="badge hold">HOLD 62.4</span></td>
+      <td><div class="score-wrap"><div class="score-bar-bg"><div class="bar bar-buy" style="width:68%"></div></div><div class="score-num">68</div></div></td>
+      <td class="mono">51.2</td>
+      <td class="mono pos">28.4</td>
+      <td class="mono pos">6.8%</td>
+      <td class="mono pos">2.9%</td>
+      <td class="mono hold" style="color:#f59e0b">+8.4%</td>
+      <td class="dim" style="font-size:12px">Consumer</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── Watchlist Alerts ── -->
+<div class="section-title">🔔 Watchlist Alerts</div>
+<table>
+  <thead>
+    <tr><th>Ticker</th><th>Price</th><th>Alert</th><th>Daily Score</th><th>Signal</th></tr>
+  </thead>
+  <tbody>
+    <tr class="alert-row">
+      <td class="mono" style="font-weight:700;color:#e0e8ff;">NVDA</td>
+      <td class="mono">$875.40</td>
+      <td><span class="alert-badge">⚡ Strong BUY — score 84.7</span></td>
+      <td class="mono">84.7</td>
+      <td><span class="badge buy">BUY</span></td>
+    </tr>
+    <tr class="alert-row">
+      <td class="mono" style="font-weight:700;color:#e0e8ff;">MSFT</td>
+      <td class="mono">$415.30</td>
+      <td><span class="alert-badge">⚡ Strong BUY — score 76.5</span></td>
+      <td class="mono">76.5</td>
+      <td><span class="badge buy">BUY</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── Indicator Reference ── -->
+<div class="section-title">📊 Indicator Reference — NVDA (Top Pick)</div>
+<div class="indicator-grid">
+  <div class="ind-card">
+    <div class="ind-name">RSI (14)</div>
+    <div class="ind-val" style="color:#f59e0b">58.4</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">MACD</div>
+    <div class="ind-val" style="color:#10b981">+2.14</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">ADX</div>
+    <div class="ind-val" style="color:#10b981">31.2</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">ATR%</div>
+    <div class="ind-val">3.8%</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">Stoch K/D</div>
+    <div class="ind-val">62/58</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">EMA 20</div>
+    <div class="ind-val">$842.10</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">EMA 50</div>
+    <div class="ind-val">$798.40</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">OBV Trend</div>
+    <div class="ind-val" style="color:#10b981">Rising</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">Ichimoku</div>
+    <div class="ind-val" style="color:#10b981">Above Cloud</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-name">BB Position</div>
+    <div class="ind-val">Mid Band</div>
+  </div>
+</div>
+
+<div class="disclaimer">
+  ⚠️ <strong>Disclaimer:</strong> This report is generated by an automated algorithm for informational purposes only.
+  It does not constitute financial advice. Always conduct your own research and consult a licensed financial advisor
+  before making any investment decisions. Past performance is not indicative of future results.
+</div>
+
+<div class="footer">
+  ⚡ Stock Intelligence Scanner &nbsp;•&nbsp; Generated 2025-02-25 14:00:00<br>
+  10 Technical Indicators + 10 Fundamental Indicators &nbsp;•&nbsp; Timeframes: Daily · Weekly · Monthly<br>
+  Powered by yfinance &amp; Python &nbsp;•&nbsp; Hourly automated delivery
+</div>
+
+</div>
+</body>
+</html>
