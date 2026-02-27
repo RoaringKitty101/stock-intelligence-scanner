@@ -21,10 +21,11 @@ from email.mime.text import MIMEText
 from jinja2 import Template
 from config import Config
 
-# ─── Logging Setup ──────────────────────────────────────────────────────────
+# ─── Logging Setup (Windows Unicode-safe) ───────────────────────────────────
 import sys
 
 class SafeStreamHandler(logging.StreamHandler):
+    """Strips emoji/special chars that Windows cp1252 terminal can't display."""
     def emit(self, record):
         try:
             msg = self.format(record)
@@ -970,25 +971,32 @@ def send_email(results, cfg):
         watchlist_alerts=watchlist_alerts,
     )
 
+    # Support both single EMAIL_TO and multiple EMAIL_RECIPIENTS
+    recipients = getattr(cfg, "EMAIL_RECIPIENTS", None)
+    if not recipients:
+        recipients = [cfg.EMAIL_TO]
+    # Remove blanks and duplicates
+    recipients = list(dict.fromkeys([r.strip() for r in recipients if r.strip()]))
+
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"📊 Stock Intelligence Report — {scan_time} | {buy_count} BUY | {sell_count} SELL"
+    msg["Subject"] = f"[Stock Intelligence] {scan_time} | {buy_count} BUY | {hold_count} HOLD | {sell_count} SELL"
     msg["From"] = cfg.EMAIL_FROM
-    msg["To"] = cfg.EMAIL_TO
+    msg["To"] = ", ".join(recipients)
     msg.attach(MIMEText(html, "html"))
 
     try:
         with smtplib.SMTP_SSL(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
             server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
-            server.sendmail(cfg.EMAIL_FROM, cfg.EMAIL_TO, msg.as_string())
-        log.info(f"✅ Email sent to {cfg.EMAIL_TO}")
+            server.sendmail(cfg.EMAIL_FROM, recipients, msg.as_string())
+        log.info(f"[OK] Email sent to {len(recipients)} recipient(s): {', '.join(recipients)}")
     except Exception as e:
-        log.error(f"❌ Email failed: {e}")
+        log.error(f"[ERROR] Email failed: {e}")
 
-    # Save HTML report locally
+    # Save HTML report locally (UTF-8 for Windows)
     report_path = f"output/report_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(html)
-    log.info(f"📄 Report saved: {report_path}")
+    log.info("[OK] Report saved: " + report_path)
 
 
 # ════════════════════════════════════════════════════════════════════════════

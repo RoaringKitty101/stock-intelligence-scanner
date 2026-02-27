@@ -1,0 +1,69 @@
+"""
+============================================================
+ STOCK INTELLIGENCE SCANNER — CONFIGURATION
+============================================================
+ Edit this file to customize your scanner.
+ Set your email credentials and ticker watchlist here.
+============================================================
+"""
+
+import os
+
+
+class Config:
+    # ─── Email Settings ──────────────────────────────────────────────────────
+    # For Gmail: enable "App Passwords" in Google Account > Security
+    # Then use your Gmail address and the App Password (not your regular password)
+    # https://myaccount.google.com/apppasswords
+
+    SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+    SMTP_USER = os.getenv("SMTP_USER", "your_email@gmail.com")         # ← Change this
+    SMTP_PASS = os.getenv("SMTP_PASS", "your_app_password_here")       # ← Change this
+    EMAIL_FROM = os.getenv("EMAIL_FROM", "your_email@gmail.com")       # ← Change this
+    
+    # --- Multiple Recipients ---------------------------------------------------
+    # Add as many email addresses as you want — ALL will receive the hourly report
+    EMAIL_RECIPIENTS = [
+        "vijaykumar.gande@gmail.com",      # <- Change this (1st recipient)
+        "deepenrp12@gmail.com",               # <- Add 2nd recipient here
+        "rasheedbatong@gmail.com",          # <- Add 3rd recipient here
+        # "anyone@email.com",             # <- Uncomment to add more
+    ]
+
+    # EMAIL_TO points to first recipient (used internally)
+    EMAIL_TO = EMAIL_RECIPIENTS[0]
+
+    # ─── Scan Interval ───────────────────────────────────────────────────────
+    SCAN_INTERVAL_HOURS = 1  # How often to scan and email (default: every hour)
+
+    # ─── Watchlist ───────────────────────────────────────────────────────────
+    # These tickers get special "Alert" notifications in the email
+    WATCHLIST = [
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+        "TSLA", "META", "BRK-B", "JPM", "V"
+    ]
+
+    # ─── Full Ticker Universe ─────────────────────────────────────────────────
+    # Stocks to scan every hour. Add or remove tickers as you like.
+    # Scanning too many (~100+) may be slow due to API rate limits.
+    TICKERS = [
+        # ── Mega-Cap Tech ──
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO",
+        # ── Financials ──
+        "JPM", "BAC", "V", "MA", "WFC", "GS", "MS", "BRK-B",
+        # ── Healthcare ──
+        "JNJ", "LLY", "UNH", "PFE", "MRK", "ABBV", "BMY", "AMGN",
+        # ── Energy ──
+        "XOM", "CVX", "COP", "SLB", "EOG",
+        # ── Consumer ──
+        "WMT", "COST", "HD", "MCD", "SBUX", "NKE", "DIS", "NFLX",
+        # ── Industrials ──
+        "CAT", "RTX", "HON", "GE", "BA", "UPS", "DE",
+        # ── Semiconductor ──
+        "AMD", "INTC", "QCOM", "MU", "AMAT", "LRCX",
+        # ── Cloud & SaaS ──
+        "CRM", "NOW", "SNOW", "PLTR", "DDOG", "ZS", "CRWD",
+        # ── ETFs (for sector signals) ──
+        "SPY", "QQQ", "IWM", "GLD", "TLT",
+    ]
